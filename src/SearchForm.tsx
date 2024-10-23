@@ -14,11 +14,14 @@ const SearchForm: React.FC<SearchFormProps> = ({ ingredients, onSearch }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mb-4">
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col items-center mb-8 space-y-4"
+    >
       <select
         value={selectedIngredient}
         onChange={(e) => setSelectedIngredient(e.target.value)}
-        className="border p-2 rounded w-full"
+        className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
       >
         <option value="">Select an ingredient</option>
         {ingredients.map((ingredient, index) => (
@@ -27,7 +30,10 @@ const SearchForm: React.FC<SearchFormProps> = ({ ingredients, onSearch }) => {
           </option>
         ))}
       </select>
-      <button type="submit" className="bg-blue-500 text-white p-2 rounded mt-2">
+      <button
+        type="submit"
+        className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+      >
         Search
       </button>
     </form>

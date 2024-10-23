@@ -47,10 +47,14 @@ const App: React.FC = () => {
   if (error) return <p>Error loading ingredients</p>;
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4">Recipe Generator</h1>
-      <SearchForm ingredients={ingredients} onSearch={searchRecipes} />
-      <RecipeList recipes={recipes} />
+    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center">
+      <div className="container mx-auto p-8 bg-white rounded-lg shadow-lg">
+        <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">
+          Recipe Generator
+        </h1>
+        <SearchForm ingredients={ingredients} onSearch={searchRecipes} />
+        <RecipeList recipes={recipes} />
+      </div>
     </div>
   );
 };
