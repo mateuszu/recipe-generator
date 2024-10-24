@@ -2,50 +2,102 @@ import React, { useState } from "react";
 
 interface SearchFormProps {
   ingredients: string[];
-  onSearch: (ingredient: string, maxIngredients: number | null) => void;
+  onSearch: (
+    selectedIngredients: string[],
+    maxIngredients: number | null
+  ) => void;
 }
 
 const SearchForm: React.FC<SearchFormProps> = ({ ingredients, onSearch }) => {
-  const [selectedIngredient, setSelectedIngredient] = useState("");
+  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([
+    "",
+  ]);
   const [maxIngredients, setMaxIngredients] = useState<number | null>(null);
+
+  const handleIngredientChange = (index: number, value: string) => {
+    const newSelectedIngredients = [...selectedIngredients];
+    newSelectedIngredients[index] = value;
+    setSelectedIngredients(newSelectedIngredients);
+  };
+
+  const addIngredient = () => {
+    setSelectedIngredients([...selectedIngredients, ""]);
+  };
+
+  const removeIngredient = (index: number) => {
+    const newSelectedIngredients = selectedIngredients.filter(
+      (_, i) => i !== index
+    );
+    setSelectedIngredients(newSelectedIngredients);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(selectedIngredient, maxIngredients);
+    onSearch(
+      selectedIngredients.filter((ingredient) => ingredient),
+      maxIngredients
+    );
   };
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col items-center mb-8 space-y-4"
+      className="flex flex-col items-center mb-8 space-y-4 relative"
     >
-      <select
-        value={selectedIngredient}
-        onChange={(e) => setSelectedIngredient(e.target.value)}
-        className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-      >
-        <option value="">Select an ingredient</option>
-        {ingredients.map((ingredient, index) => (
-          <option key={index} value={ingredient}>
-            {ingredient}
-          </option>
-        ))}
-      </select>
+      {selectedIngredients.map((ingredient, index) => (
+        <div
+          key={index}
+          className="relative flex items-center justify-center space-x-2"
+        >
+          <select
+            value={ingredient}
+            onChange={(e) => handleIngredientChange(index, e.target.value)}
+            className="w-64 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          >
+            <option value="">Select an ingredient</option>
+            {ingredients.map((ing, i) => (
+              <option key={i} value={ing}>
+                {ing}
+              </option>
+            ))}
+          </select>
 
-      <select
-        value={maxIngredients !== null ? maxIngredients : ""}
-        onChange={(e) =>
-          setMaxIngredients(e.target.value ? parseInt(e.target.value) : null)
-        }
-        className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          {index > 0 && (
+            <button
+              type="button"
+              onClick={() => removeIngredient(index)}
+              className="absolute right-[-40px] px-3 py-1 bg-red-500 text-white rounded-lg h-full"
+            >
+              -
+            </button>
+          )}
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={addIngredient}
+        className="px-3 py-1 bg-green-500 text-white rounded-lg"
       >
-        <option value="">No limit on ingredients</option>
-        {Array.from({ length: 20 }, (_, index) => index + 1).map((num) => (
-          <option key={num} value={num}>
-            {num} ingredients
-          </option>
-        ))}
-      </select>
+        +
+      </button>
+
+      <div className="flex items-center justify-center w-full">
+        <select
+          value={maxIngredients !== null ? maxIngredients : ""}
+          onChange={(e) =>
+            setMaxIngredients(e.target.value ? parseInt(e.target.value) : null)
+          }
+          className="w-64 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+        >
+          <option value="">No limit on ingredients</option>
+          {Array.from({ length: 20 }, (_, index) => index + 1).map((num) => (
+            <option key={num} value={num}>
+              {num} ingredients
+            </option>
+          ))}
+        </select>
+      </div>
 
       <button
         type="submit"
