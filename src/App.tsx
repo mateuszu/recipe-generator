@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import RecipeList from "./components/RecipeList";
 import SearchForm from "./components/SearchForm";
@@ -53,7 +53,6 @@ const App: React.FC = () => {
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const recipeRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const {
     data: ingredients,
@@ -68,47 +67,49 @@ const App: React.FC = () => {
     selectedIngredients: string[],
     maxIngredients: number | null
   ) => {
-    if (selectedIngredients.length === 0 || !selectedIngredients[0]) {
-      alert("Please select at least one ingredient.");
-      return;
-    }
-
     try {
-      const ingredientQuery = selectedIngredients[0];
-      const response = await axios.get(
-        `https://themealdb.com/api/json/v1/1/filter.php?i=${ingredientQuery}`
-      );
-
-      if (!response.data.meals) {
-        alert("No recipes found for the selected ingredients.");
-        setRecipes([]);
-        return;
-      }
-
-      const detailedRecipes = await Promise.all(
-        response.data.meals.map(async (meal: { idMeal: string }) => {
-          const detailResponse = await axios.get(
-            `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${meal.idMeal}`
+      const allRecipes = await Promise.all(
+        selectedIngredients.map(async (ingredient) => {
+          const response = await axios.get(
+            `https://themealdb.com/api/json/v1/1/filter.php?i=${ingredient}`
           );
-          return parseRecipe(detailResponse.data.meals[0]);
+
+          if (!response.data.meals) {
+            return [];
+          }
+
+          return await Promise.all(
+            response.data.meals.map(async (meal: { idMeal: string }) => {
+              const detailResponse = await axios.get(
+                `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${meal.idMeal}`
+              );
+              return parseRecipe(detailResponse.data.meals[0]);
+            })
+          );
         })
       );
 
-      const filteredRecipes = detailedRecipes.filter((recipe) => {
-        const recipeIngredients = recipe.ingredients.map((ingredient: string) =>
-          ingredient.toLowerCase()
-        );
+      const flattenedRecipes = allRecipes.flat();
 
-        return selectedIngredients.every((selectedIngredient) =>
-          recipeIngredients.includes(selectedIngredient.toLowerCase())
+      const uniqueRecipesMap = new Map();
+      flattenedRecipes.forEach((recipe) => {
+        uniqueRecipesMap.set(recipe.idMeal, recipe);
+      });
+      const uniqueRecipes = Array.from(uniqueRecipesMap.values());
+
+      const filteredRecipes = uniqueRecipes.filter((recipe: Recipe) => {
+        const recipeIngredients = recipe.ingredients.filter((ing) => ing);
+        return selectedIngredients.every((ingredient) =>
+          recipeIngredients.some((recipeIngredient: string) =>
+            recipeIngredient.toLowerCase().includes(ingredient.toLowerCase())
+          )
         );
       });
 
-      const finalRecipes = maxIngredients
-        ? filteredRecipes.filter(
-            (recipe) => recipe.ingredients.length <= maxIngredients
-          )
-        : filteredRecipes;
+      const finalRecipes = filteredRecipes.filter(
+        (recipe) =>
+          maxIngredients === null || recipe.ingredients.length <= maxIngredients
+      );
 
       setRecipes(finalRecipes);
     } catch (error) {
@@ -142,66 +143,41 @@ const App: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "ArrowRight") {
-        setSelectedRecipeIndex((prevIndex) =>
-          prevIndex !== null ? (prevIndex + 1) % recipes.length : 0
-        );
-      } else if (event.key === "ArrowLeft") {
-        setSelectedRecipeIndex((prevIndex) =>
-          prevIndex !== null
-            ? (prevIndex - 1 + recipes.length) % recipes.length
-            : 0
-        );
-      } else if (event.key === "Enter" && selectedRecipeIndex !== null) {
-        handleOpenModal(selectedRecipeIndex);
-      } else if (event.key === "Escape" && isModalOpen) {
-        handleCloseModal();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [selectedRecipeIndex, recipes, isModalOpen]);
-
-  useEffect(() => {
-    if (
-      selectedRecipeIndex !== null &&
-      recipeRefs.current[selectedRecipeIndex]
-    ) {
-      recipeRefs.current[selectedRecipeIndex]?.focus();
-    }
-  }, [selectedRecipeIndex]);
-
   if (isLoading) return <p>Loading ingredients...</p>;
   if (error) return <p>Error loading ingredients</p>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center">
-      <div className="container mx-auto p-8 bg-white rounded-lg shadow-lg">
-        <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">
-          Recipe Generator
-        </h1>
+    <div className="relative flex flex-col items-center justify-center min-h-screen space-y-8">
+      <div className="absolute inset-0 -z-10 h-full w-full bg-white [background:radial-gradient(125%_125%_at_50%_10%,#fff_40%,#63e_100%)]"></div>
+
+      <h1 className="text-6xl font-extrabold text-gray-800 mt-12 mb-6 tracking-tight">
+        Recipe Generator
+      </h1>
+
+      <div className="container mx-auto p-8 bg-white rounded-full w-11/12 max-w-2xl h-96 flex flex-col items-center justify-center hover:shadow-[0_10px_30px_-15px_rgba(255,0,255,0.7),0_10px_20px_5px_rgba(99,102,241,0.7)] transition-shadow duration-300">
         <SearchForm
           ingredients={ingredients?.map((ing) => ing.strIngredient) || []}
           onSearch={searchRecipes}
         />
-        <RecipeList recipes={recipes} onRecipeClick={handleOpenModal} />
-        {selectedRecipeIndex !== null && (
-          <RecipeModal
-            isOpen={isModalOpen}
-            onClose={handleCloseModal}
-            recipe={recipes[selectedRecipeIndex]}
-            onNext={handleNextRecipe}
-            onPrevious={handlePreviousRecipe}
-            hasPrevious={selectedRecipeIndex > 0}
-            hasNext={selectedRecipeIndex < recipes.length - 1}
-          />
-        )}
       </div>
+
+      {recipes.length > 0 && (
+        <div className="container mx-auto p-8 bg-white rounded-lg shadow-lg w-full max-w-2xl h-auto">
+          <RecipeList recipes={recipes} onRecipeClick={handleOpenModal} />
+        </div>
+      )}
+
+      {selectedRecipeIndex !== null && (
+        <RecipeModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          recipe={recipes[selectedRecipeIndex]}
+          onNext={handleNextRecipe}
+          onPrevious={handlePreviousRecipe}
+          hasPrevious={selectedRecipeIndex > 0}
+          hasNext={selectedRecipeIndex < recipes.length - 1}
+        />
+      )}
     </div>
   );
 };

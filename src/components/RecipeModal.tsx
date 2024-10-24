@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Recipe } from "../types";
 
 interface RecipeModalProps {
@@ -20,20 +20,39 @@ const RecipeModal: React.FC<RecipeModalProps> = ({
   hasPrevious,
   hasNext,
 }) => {
-  if (!isOpen) return null;
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight" && hasNext) {
+        onNext();
+      }
+      if (e.key === "ArrowLeft" && hasPrevious) {
+        onPrevious();
+      }
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
 
-  const handleClose = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
+    if (isOpen) {
+      window.addEventListener("keydown", handleKeyDown);
     }
-  };
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, hasNext, hasPrevious, onNext, onPrevious, onClose]);
+
+  if (!isOpen) return null;
 
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      onClick={handleClose}
+      onClick={onClose}
     >
-      <div className="bg-white rounded-lg shadow-lg w-11/12 sm:w-3/4 lg:w-1/2 max-h-[90%] flex flex-col relative overflow-hidden">
+      <div
+        className="bg-white rounded-lg shadow-lg w-11/12 sm:w-3/4 lg:w-1/2 max-h-[90%] flex flex-col relative overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="w-full">
           <img
             src={recipe.strMealThumb}
