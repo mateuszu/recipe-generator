@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import RecipeList from "./components/RecipeList";
 import SearchForm from "./components/SearchForm";
@@ -53,6 +53,7 @@ const App: React.FC = () => {
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const recipeRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const {
     data: ingredients,
@@ -68,7 +69,6 @@ const App: React.FC = () => {
       `https://themealdb.com/api/json/v1/1/filter.php?i=${ingredient}`
     );
 
-    // Fetching details for each meal to have all the information including instructions and ingredients
     const detailedRecipes = await Promise.all(
       response.data.meals.map(async (meal: { idMeal: string }) => {
         const detailResponse = await axios.get(
@@ -105,6 +105,40 @@ const App: React.FC = () => {
       setSelectedRecipeIndex(selectedRecipeIndex - 1);
     }
   };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "ArrowRight") {
+        setSelectedRecipeIndex((prevIndex) =>
+          prevIndex !== null ? (prevIndex + 1) % recipes.length : 0
+        );
+      } else if (event.key === "ArrowLeft") {
+        setSelectedRecipeIndex((prevIndex) =>
+          prevIndex !== null
+            ? (prevIndex - 1 + recipes.length) % recipes.length
+            : 0
+        );
+      } else if (event.key === "Enter" && selectedRecipeIndex !== null) {
+        handleOpenModal(selectedRecipeIndex);
+      } else if (event.key === "Escape" && isModalOpen) {
+        handleCloseModal();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedRecipeIndex, recipes, isModalOpen]);
+
+  useEffect(() => {
+    if (
+      selectedRecipeIndex !== null &&
+      recipeRefs.current[selectedRecipeIndex]
+    ) {
+      recipeRefs.current[selectedRecipeIndex]?.focus();
+    }
+  }, [selectedRecipeIndex]);
 
   if (isLoading) return <p>Loading ingredients...</p>;
   if (error) return <p>Error loading ingredients</p>;
