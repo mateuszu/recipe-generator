@@ -1,4 +1,5 @@
 import React from "react";
+import { motion } from "framer-motion";
 import { Recipe } from "../types";
 
 interface RecipeListProps {
@@ -10,18 +11,22 @@ const RecipeList: React.FC<RecipeListProps> = ({ recipes, onRecipeClick }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
       {recipes.map((recipe, index) => (
-        <div
+        <motion.div
           key={recipe.idMeal}
-          className="bg-white rounded-lg shadow-lg p-4 transform hover:scale-105 transition duration-300 ease-in-out cursor-pointer"
+          className="cursor-pointer p-4 bg-white rounded-lg shadow-lg"
           onClick={() => onRecipeClick(index)}
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <img
             src={recipe.strMealThumb}
             alt={recipe.strMeal}
-            className="w-full h-48 object-cover rounded-t-lg mb-4"
+            className="w-full h-48 object-cover rounded-t-lg"
           />
-          <h2 className="text-2xl font-bold text-gray-800">{recipe.strMeal}</h2>
-        </div>
+          <h3 className="mt-4 text-xl font-semibold">{recipe.strMeal}</h3>
+        </motion.div>
       ))}
     </div>
   );

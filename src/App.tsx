@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import RecipeList from "./components/RecipeList";
 import SearchForm from "./components/SearchForm";
 import RecipeModal from "./components/RecipeModal";
 import axios from "axios";
 import { Recipe, Ingredient } from "./types";
+import { motion } from "framer-motion";
 
 const fetchIngredients = async (): Promise<Ingredient[]> => {
   const response = await axios.get(
@@ -53,6 +54,9 @@ const App: React.FC = () => {
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const topRef = useRef<HTMLDivElement>(null);
 
   const {
     data: ingredients,
@@ -100,7 +104,7 @@ const App: React.FC = () => {
       const filteredRecipes = uniqueRecipes.filter((recipe: Recipe) => {
         const recipeIngredients = recipe.ingredients.filter((ing) => ing);
         return selectedIngredients.every((ingredient) =>
-          recipeIngredients.some((recipeIngredient: string) =>
+          recipeIngredients.some((recipeIngredient) =>
             recipeIngredient.toLowerCase().includes(ingredient.toLowerCase())
           )
         );
@@ -117,6 +121,27 @@ const App: React.FC = () => {
       alert("An error occurred while fetching recipes. Please try again.");
     }
   };
+
+  useEffect(() => {
+    if (recipes.length > 0 && resultsRef.current) {
+      resultsRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [recipes]);
+
+  const handleScroll = () => {
+    if (window.scrollY > 300) {
+      setShowScrollToTop(true);
+    } else {
+      setShowScrollToTop(false);
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   const handleOpenModal = (index: number) => {
     setSelectedRecipeIndex(index);
@@ -147,7 +172,10 @@ const App: React.FC = () => {
   if (error) return <p>Error loading ingredients</p>;
 
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen space-y-8">
+    <div
+      className="relative flex flex-col items-center justify-center min-h-screen space-y-8"
+      ref={topRef}
+    >
       <div className="absolute inset-0 -z-10 h-full w-full bg-white [background:radial-gradient(125%_125%_at_50%_10%,#fff_40%,#63e_100%)]"></div>
 
       <h1 className="text-6xl font-extrabold text-gray-800 mt-12 mb-6 tracking-tight">
@@ -162,9 +190,24 @@ const App: React.FC = () => {
       </div>
 
       {recipes.length > 0 && (
-        <div className="container mx-auto p-8 bg-white rounded-lg shadow-lg w-full max-w-2xl h-auto">
+        <motion.div
+          ref={resultsRef}
+          className="mx-auto p-8 bg-white rounded-lg shadow-lg w-full max-w-4xl"
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           <RecipeList recipes={recipes} onRecipeClick={handleOpenModal} />
-        </div>
+        </motion.div>
+      )}
+
+      {showScrollToTop && (
+        <button
+          onClick={() => topRef.current?.scrollIntoView({ behavior: "smooth" })}
+          className="fixed bottom-4 right-4 bg-blue-500 text-white p-3 rounded-full shadow-lg"
+        >
+          Scroll to Top
+        </button>
       )}
 
       {selectedRecipeIndex !== null && (
