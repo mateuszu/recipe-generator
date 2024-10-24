@@ -173,16 +173,25 @@ const App: React.FC = () => {
 
   return (
     <div
-      className="relative flex flex-col items-center justify-center min-h-screen space-y-8"
+      className="relative flex flex-col items-center justify-center min-h-screen"
       ref={topRef}
     >
       <div className="absolute inset-0 -z-10 h-full w-full bg-white [background:radial-gradient(125%_125%_at_50%_10%,#fff_40%,#63e_100%)]"></div>
 
-      <h1 className="text-6xl font-extrabold text-gray-800 mt-12 mb-6 tracking-tight">
-        Recipe Generator
-      </h1>
+      <div className="w-full flex flex-col items-center mt-4">
+        <h1 className="mb-4 text-4xl font-thin uppercase text-gray-900 dark:text-white md:text-6xl lg:text-7xl text-center font-poppins">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-indigo-600">
+            Recipe Generator
+          </span>
+        </h1>
+        <p className="text-xl font-thin text-gray-500 lg:text-2xl dark:text-gray-400 text-center w-3/4 font-poppins">
+          Customize your search by specifying the maximum number of ingredients
+          you want to include, ensuring you find recipes that fit your pantry
+          while minimizing waste
+        </p>
+      </div>
 
-      <div className="container mx-auto p-8 bg-white rounded-full w-11/12 max-w-2xl h-96 flex flex-col items-center justify-center hover:shadow-[0_10px_30px_-15px_rgba(255,0,255,0.7),0_10px_20px_5px_rgba(99,102,241,0.7)] transition-shadow duration-300">
+      <div className="container mx-auto p-8 my-16 bg-white rounded-full w-11/12 max-w-2xl h-96 flex flex-col items-center justify-center hover:shadow-[0_10px_30px_-15px_rgba(255,0,255,0.7),0_10px_20px_5px_rgba(99,102,241,0.7)] transition-shadow duration-300">
         <SearchForm
           ingredients={ingredients?.map((ing) => ing.strIngredient) || []}
           onSearch={searchRecipes}
@@ -192,7 +201,7 @@ const App: React.FC = () => {
       {recipes.length > 0 && (
         <motion.div
           ref={resultsRef}
-          className="mx-auto p-8 bg-white rounded-lg shadow-lg w-full max-w-4xl"
+          className="container mx-auto p-8 bg-white rounded-lg shadow-lg w-full max-w-4xl"
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
