@@ -64,21 +64,39 @@ const App: React.FC = () => {
     queryFn: fetchIngredients,
   });
 
-  const searchRecipes = async (ingredient: string) => {
-    const response = await axios.get(
-      `https://themealdb.com/api/json/v1/1/filter.php?i=${ingredient}`
-    );
+  const searchRecipes = async (
+    ingredient: string,
+    maxIngredients: number | null
+  ) => {
+    if (!ingredient) {
+      alert("Please select an ingredient.");
+      return;
+    }
 
-    const detailedRecipes = await Promise.all(
-      response.data.meals.map(async (meal: { idMeal: string }) => {
-        const detailResponse = await axios.get(
-          `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${meal.idMeal}`
-        );
-        return parseRecipe(detailResponse.data.meals[0]);
-      })
-    );
+    try {
+      const response = await axios.get(
+        `https://www.themealdb.com/api/json/v1/1/filter.php?i=${ingredient}`
+      );
 
-    setRecipes(detailedRecipes);
+      const detailedRecipes = await Promise.all(
+        response.data.meals.map(async (meal: { idMeal: string }) => {
+          const detailResponse = await axios.get(
+            `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${meal.idMeal}`
+          );
+          return parseRecipe(detailResponse.data.meals[0]);
+        })
+      );
+
+      const filteredRecipes = maxIngredients
+        ? detailedRecipes.filter(
+            (recipe) => recipe.ingredients.length <= maxIngredients
+          )
+        : detailedRecipes;
+
+      setRecipes(filteredRecipes);
+    } catch (error) {
+      console.error("Error fetching recipes:", error);
+    }
   };
 
   const handleOpenModal = (index: number) => {
