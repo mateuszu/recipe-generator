@@ -191,7 +191,7 @@ const App: React.FC = () => {
         </p>
       </div>
 
-      <div className="container mx-auto p-8 my-16 bg-white rounded-full w-11/12 max-w-2xl h-96 flex flex-col items-center justify-center hover:shadow-[0_10px_30px_-15px_rgba(255,0,255,0.7),0_10px_20px_5px_rgba(99,102,241,0.7)] transition-shadow duration-300">
+      <div className="container mx-auto p-8 my-16 bg-white rounded-full w-11/12 max-w-2xl h-auto flex flex-col items-center justify-center hover:shadow-[0_10px_30px_-15px_rgba(255,0,255,0.7),0_10px_20px_5px_rgba(99,102,241,0.7)] transition-shadow duration-300">
         <SearchForm
           ingredients={ingredients?.map((ing) => ing.strIngredient) || []}
           onSearch={searchRecipes}
