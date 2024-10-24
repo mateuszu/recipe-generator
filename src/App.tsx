@@ -1,37 +1,64 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import RecipeList from "./components/RecipeList";
 import SearchForm from "./components/SearchForm";
+import RecipeModal from "./components/RecipeModal";
 import axios from "axios";
+import { Recipe, Ingredient } from "./types";
 
-export type Recipe = {
-  strMeal: string;
-  strMealThumb: string;
-  idMeal: string;
-};
-
-type Meal = {
-  idIngredient: string;
-  strIngredient: string;
-  strDescription: string;
-  strType: string | null;
-};
-
-const fetchIngredients = async () => {
+const fetchIngredients = async (): Promise<Ingredient[]> => {
   const response = await axios.get(
     "https://www.themealdb.com/api/json/v1/1/list.php?i=list"
   );
-  return response.data.meals.map((meal: Meal) => meal.strIngredient);
+  return response.data.meals.map((meal: Ingredient) => ({
+    idIngredient: meal.idIngredient,
+    strIngredient: meal.strIngredient,
+    strDescription: meal.strDescription,
+    strType: meal.strType,
+  }));
+};
+
+const parseRecipe = (apiRecipe: Record<string, string | null>): Recipe => {
+  const ingredients: string[] = [];
+  const measures: string[] = [];
+
+  for (let i = 1; i <= 20; i++) {
+    const ingredient = apiRecipe[`strIngredient${i}`];
+    const measure = apiRecipe[`strMeasure${i}`];
+
+    if (ingredient && ingredient.trim() !== "") {
+      ingredients.push(ingredient.trim());
+      measures.push(measure ? measure.trim() : "");
+    }
+  }
+
+  return {
+    idMeal: apiRecipe.idMeal || "",
+    strMeal: apiRecipe.strMeal || "",
+    strMealThumb: apiRecipe.strMealThumb || "",
+    strInstructions: apiRecipe.strInstructions || "",
+    ingredients,
+    measures,
+    strTags: apiRecipe.strTags || "",
+    strCategory: apiRecipe.strCategory || "",
+    strArea: apiRecipe.strArea || "",
+    strYoutube: apiRecipe.strYoutube || "",
+    strSource: apiRecipe.strSource || "",
+  };
 };
 
 const App: React.FC = () => {
-  const [recipes, setRecipes] = React.useState<Recipe[] | []>([]);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [selectedRecipeIndex, setSelectedRecipeIndex] = useState<number | null>(
+    null
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const {
     data: ingredients,
     isLoading,
     error,
-  } = useQuery({
+  } = useQuery<Ingredient[]>({
     queryKey: ["ingredients"],
     queryFn: fetchIngredients,
   });
@@ -40,7 +67,43 @@ const App: React.FC = () => {
     const response = await axios.get(
       `https://themealdb.com/api/json/v1/1/filter.php?i=${ingredient}`
     );
-    setRecipes(response.data.meals);
+
+    // Fetching details for each meal to have all the information including instructions and ingredients
+    const detailedRecipes = await Promise.all(
+      response.data.meals.map(async (meal: { idMeal: string }) => {
+        const detailResponse = await axios.get(
+          `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${meal.idMeal}`
+        );
+        return parseRecipe(detailResponse.data.meals[0]);
+      })
+    );
+
+    setRecipes(detailedRecipes);
+  };
+
+  const handleOpenModal = (index: number) => {
+    setSelectedRecipeIndex(index);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedRecipeIndex(null);
+  };
+
+  const handleNextRecipe = () => {
+    if (
+      selectedRecipeIndex !== null &&
+      selectedRecipeIndex < recipes.length - 1
+    ) {
+      setSelectedRecipeIndex(selectedRecipeIndex + 1);
+    }
+  };
+
+  const handlePreviousRecipe = () => {
+    if (selectedRecipeIndex !== null && selectedRecipeIndex > 0) {
+      setSelectedRecipeIndex(selectedRecipeIndex - 1);
+    }
   };
 
   if (isLoading) return <p>Loading ingredients...</p>;
@@ -52,8 +115,22 @@ const App: React.FC = () => {
         <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">
           Recipe Generator
         </h1>
-        <SearchForm ingredients={ingredients} onSearch={searchRecipes} />
-        <RecipeList recipes={recipes} />
+        <SearchForm
+          ingredients={ingredients?.map((ing) => ing.strIngredient) || []}
+          onSearch={searchRecipes}
+        />
+        <RecipeList recipes={recipes} onRecipeClick={handleOpenModal} />
+        {selectedRecipeIndex !== null && (
+          <RecipeModal
+            isOpen={isModalOpen}
+            onClose={handleCloseModal}
+            recipe={recipes[selectedRecipeIndex]}
+            onNext={handleNextRecipe}
+            onPrevious={handlePreviousRecipe}
+            hasPrevious={selectedRecipeIndex > 0}
+            hasNext={selectedRecipeIndex < recipes.length - 1}
+          />
+        )}
       </div>
     </div>
   );
