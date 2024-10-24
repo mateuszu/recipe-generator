@@ -1,7 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import RecipeList from "./RecipeList";
-import SearchForm from "./SearchForm";
+import RecipeList from "./components/RecipeList";
+import SearchForm from "./components/SearchForm";
 import axios from "axios";
 
 export type Recipe = {
