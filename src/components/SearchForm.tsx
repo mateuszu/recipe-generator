@@ -20,6 +20,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
     "",
   ]);
   const [maxIngredients, setMaxIngredients] = useState<number | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleIngredientChange = (index: number, value: string) => {
     const newSelectedIngredients = [...selectedIngredients];
@@ -40,17 +41,44 @@ const SearchForm: React.FC<SearchFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(
-      selectedIngredients.filter((ingredient) => ingredient),
-      maxIngredients
+    const hasSelectedIngredient = selectedIngredients.some(
+      (ingredient) => ingredient.trim() !== ""
     );
+    if (!hasSelectedIngredient) {
+      setValidationError("Please select at least one ingredient.");
+    } else {
+      setValidationError(null);
+      onSearch(
+        selectedIngredients.filter((ingredient) => ingredient),
+        maxIngredients
+      );
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <div className="spinner-border animate-spin inline-block w-12 h-12 border-4 rounded-full text-indigo-600"></div>
+        <p className="text-center text-gray-500 mt-4">Loading ingredients...</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <p className="text-center text-red-500 mt-4">Error loading ingredients</p>
+    );
+  }
 
   return (
     <form
       onSubmit={handleSubmit}
       className="flex flex-col items-center mb-8 space-y-4 relative"
     >
+      {validationError && (
+        <p className="text-center text-red-500">{validationError}</p>
+      )}
+
       {selectedIngredients.map((ingredient, index) => (
         <div
           key={index}
@@ -112,16 +140,6 @@ const SearchForm: React.FC<SearchFormProps> = ({
       >
         Search
       </button>
-
-      {isLoading && (
-        <p className="text-center text-gray-500 mt-4">Loading ingredients...</p>
-      )}
-
-      {isError && (
-        <p className="text-center text-red-500 mt-4">
-          Error loading ingredients
-        </p>
-      )}
     </form>
   );
 };
