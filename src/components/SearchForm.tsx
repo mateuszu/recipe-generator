@@ -6,9 +6,16 @@ interface SearchFormProps {
     selectedIngredients: string[],
     maxIngredients: number | null
   ) => void;
+  isLoading: boolean;
+  isError: boolean;
 }
 
-const SearchForm: React.FC<SearchFormProps> = ({ ingredients, onSearch }) => {
+const SearchForm: React.FC<SearchFormProps> = ({
+  ingredients,
+  onSearch,
+  isLoading,
+  isError,
+}) => {
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([
     "",
   ]);
@@ -105,6 +112,16 @@ const SearchForm: React.FC<SearchFormProps> = ({ ingredients, onSearch }) => {
       >
         Search
       </button>
+
+      {isLoading && (
+        <p className="text-center text-gray-500 mt-4">Loading ingredients...</p>
+      )}
+
+      {isError && (
+        <p className="text-center text-red-500 mt-4">
+          Error loading ingredients
+        </p>
+      )}
     </form>
   );
 };

@@ -55,13 +55,15 @@ const App: React.FC = () => {
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showScrollToTop, setShowScrollToTop] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [isFetchingRecipes, setIsFetchingRecipes] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
 
   const {
     data: ingredients,
     isLoading,
-    error,
+    isError,
   } = useQuery<Ingredient[]>({
     queryKey: ["ingredients"],
     queryFn: fetchIngredients,
@@ -71,6 +73,8 @@ const App: React.FC = () => {
     selectedIngredients: string[],
     maxIngredients: number | null
   ) => {
+    setHasSearched(true);
+    setIsFetchingRecipes(true);
     try {
       const allRecipes = await Promise.all(
         selectedIngredients.map(async (ingredient) => {
@@ -119,6 +123,8 @@ const App: React.FC = () => {
     } catch (error) {
       console.error("Error fetching recipes:", error);
       alert("An error occurred while fetching recipes. Please try again.");
+    } finally {
+      setIsFetchingRecipes(false); // Stop fetching recipes
     }
   };
 
@@ -168,9 +174,6 @@ const App: React.FC = () => {
     }
   };
 
-  if (isLoading) return <p>Loading ingredients...</p>;
-  if (error) return <p>Error loading ingredients</p>;
-
   return (
     <div
       className="relative flex flex-col items-center justify-center min-h-screen"
@@ -195,10 +198,16 @@ const App: React.FC = () => {
         <SearchForm
           ingredients={ingredients?.map((ing) => ing.strIngredient) || []}
           onSearch={searchRecipes}
+          isLoading={isLoading}
+          isError={isError}
         />
       </div>
 
-      {recipes.length > 0 && (
+      {isFetchingRecipes ? (
+        <div className="flex justify-center items-center my-8">
+          <div className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full text-indigo-600"></div>
+        </div>
+      ) : hasSearched && recipes.length === 0 ? (
         <motion.div
           ref={resultsRef}
           className="container mx-auto p-8 bg-white rounded-lg shadow-lg w-full max-w-4xl"
@@ -206,8 +215,22 @@ const App: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <RecipeList recipes={recipes} onRecipeClick={handleOpenModal} />
+          <p className="text-center text-gray-500">
+            No recipes found for the given criteria
+          </p>
         </motion.div>
+      ) : (
+        recipes.length > 0 && (
+          <motion.div
+            ref={resultsRef}
+            className="container mx-auto p-8 bg-white rounded-lg shadow-lg w-full max-w-4xl"
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <RecipeList recipes={recipes} onRecipeClick={handleOpenModal} />
+          </motion.div>
+        )
       )}
 
       {showScrollToTop && (
