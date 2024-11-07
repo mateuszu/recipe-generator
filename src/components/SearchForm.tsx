@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 interface SearchFormProps {
   ingredients: string[];
@@ -16,11 +16,44 @@ const SearchForm: React.FC<SearchFormProps> = ({
   isLoading,
   isError,
 }) => {
-  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([
-    "",
-  ]);
-  const [maxIngredients, setMaxIngredients] = useState<number | null>(null);
+  const [selectedIngredients, setSelectedIngredients] = useState<string[]>(
+    () => {
+      const savedIngredients = localStorage.getItem("selectedIngredients");
+      return savedIngredients ? JSON.parse(savedIngredients) : [""];
+    }
+  );
+  const [maxIngredients, setMaxIngredients] = useState<number | null>(() => {
+    const savedMaxIngredients = localStorage.getItem("savedMaxIngredients");
+    return savedMaxIngredients ? JSON.parse(savedMaxIngredients) : null;
+  });
+
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const savedIngredients = localStorage.getItem("selectedIngredients");
+    const savedMaxIngredients = localStorage.getItem("maxIngredients");
+
+    if (savedIngredients) {
+      setSelectedIngredients(JSON.parse(savedIngredients));
+    }
+
+    if (savedMaxIngredients) {
+      setMaxIngredients(parseInt(savedMaxIngredients, 10));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "selectedIngredients",
+      JSON.stringify(selectedIngredients)
+    );
+  }, [selectedIngredients]);
+
+  useEffect(() => {
+    if (maxIngredients !== null) {
+      localStorage.setItem("maxIngredients", maxIngredients.toString());
+    }
+  }, [maxIngredients]);
 
   const handleIngredientChange = (index: number, value: string) => {
     const newSelectedIngredients = [...selectedIngredients];
