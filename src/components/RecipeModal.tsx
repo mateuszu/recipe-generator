@@ -50,7 +50,7 @@ const RecipeModal: React.FC<RecipeModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-lg shadow-lg w-11/12 sm:w-3/4 lg:w-1/2 max-h-[90%] flex flex-col relative overflow-hidden"
+        className="bg-white h-[70vh] rounded-lg shadow-lg w-11/12 sm:w-3/4 lg:w-1/2 flex flex-col relative overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="w-full">
