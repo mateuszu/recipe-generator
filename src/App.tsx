@@ -49,7 +49,11 @@ const parseRecipe = (apiRecipe: Record<string, string | null>): Recipe => {
 };
 
 const App: React.FC = () => {
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [recipes, setRecipes] = useState<Recipe[]>(() => {
+    const savedRecipes = localStorage.getItem("savedRecipes");
+
+    return savedRecipes ? JSON.parse(savedRecipes) : [];
+  });
   const [selectedRecipeIndex, setSelectedRecipeIndex] = useState<number | null>(
     null
   );
@@ -120,6 +124,7 @@ const App: React.FC = () => {
       );
 
       setRecipes(finalRecipes);
+      localStorage.setItem("savedRecipes", JSON.stringify(finalRecipes));
     } catch (error) {
       console.error("Error fetching recipes:", error);
       alert("An error occurred while fetching recipes. Please try again.");
